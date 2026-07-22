@@ -4,8 +4,10 @@ import { ClientesModule } from '../clientes/clientes.module';
 import { PecasModule } from '../pecas/pecas.module';
 import { ServicosModule } from '../servicos/servicos.module';
 import { VeiculosModule } from '../veiculos/veiculos.module';
+import { NOTIFICACAO_PORT } from './application/notificacao.port';
 import { OrdensServicoService } from './application/ordens-servico.service';
 import { ORDEM_SERVICO_REPOSITORY } from './domain/ordem-servico.repository';
+import { EmailNotificacaoAdapter } from './infrastructure/email-notificacao.adapter';
 import { ItemOSOrmEntity } from './infrastructure/item-os.orm-entity';
 import { OrdemServicoOrmEntity } from './infrastructure/ordem-servico.orm-entity';
 import { OrdemServicoTypeOrmRepository } from './infrastructure/ordem-servico.typeorm.repository';
@@ -24,6 +26,7 @@ import { OrdensServicoController } from './presentation/ordens-servico.controlle
   providers: [
     OrdensServicoService,
     { provide: ORDEM_SERVICO_REPOSITORY, useClass: OrdemServicoTypeOrmRepository },
+    { provide: NOTIFICACAO_PORT, useClass: EmailNotificacaoAdapter },
   ],
   exports: [OrdensServicoService],
 })
