@@ -33,10 +33,7 @@ export class OrdensServicoController {
   @Get()
   @ApiQuery({ name: 'status', required: false, enum: StatusOS })
   @ApiQuery({ name: 'clienteId', required: false, type: String })
-  async findAll(
-    @Query('status') status?: StatusOS,
-    @Query('clienteId') clienteId?: string,
-  ) {
+  async findAll(@Query('status') status?: StatusOS, @Query('clienteId') clienteId?: string) {
     const list = await this.service.findAll({ status, clienteId });
     return list.map((os) => OrdemServicoPresenter.summary(os));
   }
@@ -48,6 +45,13 @@ export class OrdensServicoController {
   async tempoMedio() {
     const minutos = await this.service.tempoMedioExecucaoMinutos();
     return { tempoMedioMinutos: minutos };
+  }
+
+  @Get(':id/status')
+  @ApiOperation({ summary: 'Consulta apenas a situação atual da OS' })
+  async status(@Param('id', ParseUUIDPipe) id: string) {
+    const os = await this.service.findById(id);
+    return OrdemServicoPresenter.status(os);
   }
 
   @Get(':id')

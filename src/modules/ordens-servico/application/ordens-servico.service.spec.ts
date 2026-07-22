@@ -14,6 +14,7 @@ import {
   OrdemServicoRepository,
 } from '../domain/ordem-servico.repository';
 import { StatusOS } from '../domain/status-os';
+import { NOTIFICACAO_PORT } from './notificacao.port';
 import { OrdensServicoService } from './ordens-servico.service';
 
 const CLIENTE_ID = 'cli-1';
@@ -113,9 +114,7 @@ describe('OrdensServicoService', () => {
 
     it('rejeita se veículo não pertence ao cliente', async () => {
       clientes.findById.mockResolvedValue(cliente);
-      veiculos.findById.mockResolvedValue(
-        new Veiculo({ ...veiculo, clienteId: 'outro-cliente' }),
-      );
+      veiculos.findById.mockResolvedValue(new Veiculo({ ...veiculo, clienteId: 'outro-cliente' }));
       await expect(
         service.create({ clienteId: CLIENTE_ID, veiculoId: VEICULO_ID }),
       ).rejects.toBeInstanceOf(BadRequestException);
@@ -172,6 +171,133 @@ describe('OrdensServicoService', () => {
     it('lança NotFound quando inexistente', async () => {
       repo.findById.mockResolvedValue(null);
       await expect(service.findById('x')).rejects.toBeInstanceOf(NotFoundException);
+    });
+  });
+
+  describe('responderOrcamento (webhook público)', () => {
+    it('aprova o orçamento pelo número e inicia execução', async () => {
+      const os = new OrdemServico({
+        id: 'os-1',
+        numero: 42,
+        clienteId: CLIENTE_ID,
+        veiculoId: VEICULO_ID,
+        status: StatusOS.AGUARDANDO_APROVACAO,
+        itens: [
+          {
+            tipo: 'SERVICO',
+            referenciaId: SERVICO_ID,
+            descricao: 'Troca de óleo',
+            quantidade: 1,
+            precoUnitario: 100,
+          },
+        ],
+      });
+      repo.findByNumero.mockResolvedValue(os);
+      repo.update.mockImplementation(async (o) => o);
+
+      const result = await service.responderOrcamento(42, true);
+      expect(result.status).toBe(StatusOS.EM_EXECUCAO);
+    });
+
+    it('recusa o orçamento cancelando a OS', async () => {
+      const os = new OrdemServico({
+        id: 'os-1',
+        numero: 42,
+        clienteId: CLIENTE_ID,
+        veiculoId: VEICULO_ID,
+        status: StatusOS.AGUARDANDO_APROVACAO,
+      });
+      repo.findByNumero.mockResolvedValue(os);
+      repo.update.mockImplementation(async (o) => o);
+
+      const result = await service.responderOrcamento(42, false);
+      expect(result.status).toBe(StatusOS.CANCELADA);
+    });
+  });
+
+  describe('findAll (listagem para a oficina)', () => {
+    function osCom(status: StatusOS, recebidaEm: Date) {
+      return new OrdemServico({
+        clienteId: CLIENTE_ID,
+        veiculoId: VEICULO_ID,
+        status,
+        recebidaEm,
+      });
+    }
+
+    it('ordena por prioridade de status e mais antigas primeiro, ocultando finalizadas/entregues/canceladas', async () => {
+      const antiga = new Date('2026-01-01');
+      const nova = new Date('2026-02-01');
+      repo.findAll.mockResolvedValue([
+        osCom(StatusOS.RECEBIDA, antiga),
+        osCom(StatusOS.ENTREGUE, antiga),
+        osCom(StatusOS.EM_EXECUCAO, nova),
+        osCom(StatusOS.EM_EXECUCAO, antiga),
+        osCom(StatusOS.FINALIZADA, antiga),
+        osCom(StatusOS.AGUARDANDO_APROVACAO, nova),
+        osCom(StatusOS.EM_DIAGNOSTICO, antiga),
+      ]);
+
+      const list = await service.findAll();
+
+      expect(list.map((os) => os.status)).toEqual([
+        StatusOS.EM_EXECUCAO,
+        StatusOS.EM_EXECUCAO,
+        StatusOS.AGUARDANDO_APROVACAO,
+        StatusOS.EM_DIAGNOSTICO,
+        StatusOS.RECEBIDA,
+      ]);
+      expect(list[0].recebidaEm).toEqual(antiga);
+      expect(list[1].recebidaEm).toEqual(nova);
+    });
+
+    it('mantém o filtro explícito por status mesmo para status ocultos', async () => {
+      repo.findAll.mockResolvedValue([osCom(StatusOS.FINALIZADA, new Date())]);
+      const list = await service.findAll({ status: StatusOS.FINALIZADA });
+      expect(list).toHaveLength(1);
+    });
+  });
+
+  describe('notificação de mudança de status', () => {
+    it('notifica o cliente por e-mail após transição de status', async () => {
+      const notificacao = { notificarMudancaStatus: jest.fn() };
+      const moduleRef = await Test.createTestingModule({
+        providers: [
+          OrdensServicoService,
+          { provide: ORDEM_SERVICO_REPOSITORY, useValue: repo },
+          { provide: ClientesService, useValue: clientes },
+          { provide: VeiculosService, useValue: veiculos },
+          { provide: ServicosService, useValue: servicos },
+          { provide: PecasService, useValue: pecas },
+          { provide: NOTIFICACAO_PORT, useValue: notificacao },
+        ],
+      }).compile();
+      const svc = moduleRef.get(OrdensServicoService);
+
+      const os = new OrdemServico({
+        id: 'os-1',
+        numero: 7,
+        clienteId: CLIENTE_ID,
+        veiculoId: VEICULO_ID,
+        status: StatusOS.RECEBIDA,
+      });
+      repo.findById.mockResolvedValue(os);
+      repo.update.mockImplementation(async (o) => o);
+      clientes.findById.mockResolvedValue(
+        new Cliente({
+          id: CLIENTE_ID,
+          nome: 'João',
+          documento: '52998224725',
+          email: 'joao@email.com',
+        }),
+      );
+
+      await svc.iniciarDiagnostico('os-1');
+
+      expect(notificacao.notificarMudancaStatus).toHaveBeenCalledWith(
+        expect.objectContaining({ status: StatusOS.EM_DIAGNOSTICO }),
+        'joao@email.com',
+      );
     });
   });
 });

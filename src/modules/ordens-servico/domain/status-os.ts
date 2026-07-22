@@ -25,3 +25,20 @@ export function podeTransitar(de: StatusOS, para: StatusOS): boolean {
 export function transicoesPermitidas(de: StatusOS): StatusOS[] {
   return [...TRANSICOES_VALIDAS[de]];
 }
+
+export const STATUS_OCULTOS_NA_LISTAGEM: StatusOS[] = [
+  StatusOS.FINALIZADA,
+  StatusOS.ENTREGUE,
+  StatusOS.CANCELADA,
+];
+
+const PRIORIDADE_LISTAGEM: Partial<Record<StatusOS, number>> = {
+  [StatusOS.EM_EXECUCAO]: 0,
+  [StatusOS.AGUARDANDO_APROVACAO]: 1,
+  [StatusOS.EM_DIAGNOSTICO]: 2,
+  [StatusOS.RECEBIDA]: 3,
+};
+
+export function prioridadeListagem(status: StatusOS): number {
+  return PRIORIDADE_LISTAGEM[status] ?? Number.MAX_SAFE_INTEGER;
+}

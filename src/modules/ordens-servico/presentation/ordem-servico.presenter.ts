@@ -1,4 +1,5 @@
 import { OrdemServico } from '../domain/ordem-servico.entity';
+import { transicoesPermitidas } from '../domain/status-os';
 
 export class OrdemServicoPresenter {
   static detail(os: OrdemServico) {
@@ -42,6 +43,15 @@ export class OrdemServicoPresenter {
       status: os.status,
       orcamento: os.orcamento,
       recebidaEm: os.recebidaEm,
+    };
+  }
+
+  static status(os: OrdemServico) {
+    return {
+      numero: os.numero,
+      status: os.status,
+      proximosStatusPossiveis: transicoesPermitidas(os.status),
+      atualizadoEm: os.atualizadoEm,
     };
   }
 
