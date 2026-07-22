@@ -13,9 +13,7 @@ export type UpdateClienteInput = Partial<CreateClienteInput>;
 
 @Injectable()
 export class ClientesService {
-  constructor(
-    @Inject(CLIENTE_REPOSITORY) private readonly repository: ClienteRepository,
-  ) {}
+  constructor(@Inject(CLIENTE_REPOSITORY) private readonly repository: ClienteRepository) {}
 
   async create(input: CreateClienteInput): Promise<Cliente> {
     const cliente = new Cliente(input);

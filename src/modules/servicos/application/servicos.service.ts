@@ -14,9 +14,7 @@ export type UpdateServicoInput = Partial<CreateServicoInput>;
 
 @Injectable()
 export class ServicosService {
-  constructor(
-    @Inject(SERVICO_REPOSITORY) private readonly repository: ServicoRepository,
-  ) {}
+  constructor(@Inject(SERVICO_REPOSITORY) private readonly repository: ServicoRepository) {}
 
   create(input: CreateServicoInput): Promise<Servico> {
     return this.repository.create(new Servico(input));
@@ -41,8 +39,7 @@ export class ServicosService {
       nome: input.nome ?? atual.nome,
       descricao: input.descricao ?? atual.descricao,
       preco: input.preco ?? atual.preco,
-      duracaoEstimadaMinutos:
-        input.duracaoEstimadaMinutos ?? atual.duracaoEstimadaMinutos,
+      duracaoEstimadaMinutos: input.duracaoEstimadaMinutos ?? atual.duracaoEstimadaMinutos,
       ativo: input.ativo ?? atual.ativo,
       criadoEm: atual.criadoEm,
       atualizadoEm: new Date(),

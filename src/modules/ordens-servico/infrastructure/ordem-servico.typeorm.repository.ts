@@ -91,10 +91,7 @@ export class OrdemServicoTypeOrmRepository implements OrdemServicoRepository {
     return orm ? this.toDomain(orm) : null;
   }
 
-  async findAll(filtro?: {
-    status?: StatusOS;
-    clienteId?: string;
-  }): Promise<OrdemServico[]> {
+  async findAll(filtro?: { status?: StatusOS; clienteId?: string }): Promise<OrdemServico[]> {
     const list = await this.repo.find({
       where: filtro,
       order: { criadoEm: 'DESC' },
@@ -105,10 +102,7 @@ export class OrdemServicoTypeOrmRepository implements OrdemServicoRepository {
   async tempoMedioExecucaoMinutos(): Promise<number | null> {
     const result = await this.repo
       .createQueryBuilder('os')
-      .select(
-        'AVG(EXTRACT(EPOCH FROM (os.finalizada_em - os.execucao_iniciada_em)) / 60)',
-        'media',
-      )
+      .select('AVG(EXTRACT(EPOCH FROM (os.finalizada_em - os.execucao_iniciada_em)) / 60)', 'media')
       .where('os.execucao_iniciada_em IS NOT NULL')
       .andWhere('os.finalizada_em IS NOT NULL')
       .getRawOne<{ media: string | null }>();

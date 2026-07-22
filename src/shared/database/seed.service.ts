@@ -22,10 +22,7 @@ export class SeedService implements OnApplicationBootstrap {
           this.moduleRef.get<T>(token as Type<T>, { strict: false }),
       });
     } catch (err) {
-      this.logger.error(
-        'Seed automático falhou',
-        err instanceof Error ? err.stack : String(err),
-      );
+      this.logger.error('Seed automático falhou', err instanceof Error ? err.stack : String(err));
     }
   }
 }

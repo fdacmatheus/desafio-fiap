@@ -61,9 +61,7 @@ export class PecaTypeOrmRepository implements PecaRepository {
   }
 
   async findAll(includeInativas = false): Promise<Peca[]> {
-    const list = await this.repo.find(
-      includeInativas ? undefined : { where: { ativo: true } },
-    );
+    const list = await this.repo.find(includeInativas ? undefined : { where: { ativo: true } });
     return list.map((orm) => this.toDomain(orm));
   }
 

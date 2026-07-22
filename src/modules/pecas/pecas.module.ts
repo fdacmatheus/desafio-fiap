@@ -9,10 +9,7 @@ import { PecasController } from './presentation/pecas.controller';
 @Module({
   imports: [TypeOrmModule.forFeature([PecaOrmEntity])],
   controllers: [PecasController],
-  providers: [
-    PecasService,
-    { provide: PECA_REPOSITORY, useClass: PecaTypeOrmRepository },
-  ],
+  providers: [PecasService, { provide: PECA_REPOSITORY, useClass: PecaTypeOrmRepository }],
   exports: [PecasService, PECA_REPOSITORY],
 })
 export class PecasModule {}

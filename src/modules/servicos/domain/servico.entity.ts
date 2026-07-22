@@ -26,10 +26,7 @@ export class Servico {
     if (typeof props.preco !== 'number' || props.preco < 0) {
       throw new Error('Preço deve ser maior ou igual a zero');
     }
-    if (
-      !Number.isInteger(props.duracaoEstimadaMinutos) ||
-      props.duracaoEstimadaMinutos <= 0
-    ) {
+    if (!Number.isInteger(props.duracaoEstimadaMinutos) || props.duracaoEstimadaMinutos <= 0) {
       throw new Error('Duração estimada deve ser um inteiro positivo (minutos)');
     }
 

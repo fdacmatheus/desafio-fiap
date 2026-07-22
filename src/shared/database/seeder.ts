@@ -81,10 +81,7 @@ async function seedClientes(app: Resolver) {
   return created;
 }
 
-async function seedVeiculos(
-  app: Resolver,
-  clientes: { id?: string }[],
-) {
+async function seedVeiculos(app: Resolver, clientes: { id?: string }[]) {
   const repo = app.get<VeiculoRepository>(VEICULO_REPOSITORY);
   const service = app.get(VeiculosService);
 

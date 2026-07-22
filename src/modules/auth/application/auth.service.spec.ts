@@ -50,9 +50,7 @@ describe('AuthService', () => {
 
     it('rejeita username duplicado', async () => {
       users.findByUsername.mockResolvedValue({} as User);
-      await expect(service.register('admin', 'senha123')).rejects.toBeInstanceOf(
-        ConflictException,
-      );
+      await expect(service.register('admin', 'senha123')).rejects.toBeInstanceOf(ConflictException);
     });
   });
 
@@ -72,9 +70,7 @@ describe('AuthService', () => {
       users.findByUsername.mockResolvedValue(
         new User({ id: 'u-1', username: 'admin', passwordHash }),
       );
-      await expect(service.login('admin', 'errada')).rejects.toBeInstanceOf(
-        UnauthorizedException,
-      );
+      await expect(service.login('admin', 'errada')).rejects.toBeInstanceOf(UnauthorizedException);
     });
 
     it('rejeita usuário inexistente', async () => {

@@ -9,10 +9,7 @@ import { ServicosController } from './presentation/servicos.controller';
 @Module({
   imports: [TypeOrmModule.forFeature([ServicoOrmEntity])],
   controllers: [ServicosController],
-  providers: [
-    ServicosService,
-    { provide: SERVICO_REPOSITORY, useClass: ServicoTypeOrmRepository },
-  ],
+  providers: [ServicosService, { provide: SERVICO_REPOSITORY, useClass: ServicoTypeOrmRepository }],
   exports: [ServicosService, SERVICO_REPOSITORY],
 })
 export class ServicosModule {}

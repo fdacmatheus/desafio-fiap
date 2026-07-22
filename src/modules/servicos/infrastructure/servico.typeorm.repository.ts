@@ -52,9 +52,7 @@ export class ServicoTypeOrmRepository implements ServicoRepository {
   }
 
   async findAll(includeInativos = false): Promise<Servico[]> {
-    const list = await this.repo.find(
-      includeInativos ? undefined : { where: { ativo: true } },
-    );
+    const list = await this.repo.find(includeInativos ? undefined : { where: { ativo: true } });
     return list.map((orm) => this.toDomain(orm));
   }
 

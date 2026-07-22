@@ -54,9 +54,7 @@ describe('PecasService', () => {
 
   it('saída maior que estoque lança BadRequest', async () => {
     repo.findById.mockResolvedValue(new Peca({ ...baseInput, estoque: 1 }));
-    await expect(service.saidaEstoque('p-1', 5)).rejects.toBeInstanceOf(
-      BadRequestException,
-    );
+    await expect(service.saidaEstoque('p-1', 5)).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('findById lança NotFound quando inexistente', async () => {

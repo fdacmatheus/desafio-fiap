@@ -10,10 +10,7 @@ import { VeiculosController } from './presentation/veiculos.controller';
 @Module({
   imports: [TypeOrmModule.forFeature([VeiculoOrmEntity]), ClientesModule],
   controllers: [VeiculosController],
-  providers: [
-    VeiculosService,
-    { provide: VEICULO_REPOSITORY, useClass: VeiculoTypeOrmRepository },
-  ],
+  providers: [VeiculosService, { provide: VEICULO_REPOSITORY, useClass: VeiculoTypeOrmRepository }],
   exports: [VeiculosService, VEICULO_REPOSITORY],
 })
 export class VeiculosModule {}

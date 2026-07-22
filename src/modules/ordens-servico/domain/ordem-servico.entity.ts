@@ -64,9 +64,7 @@ export class OrdemServico {
   }
 
   get orcamento(): number {
-    return Number(
-      this.itens.reduce((total, item) => total + item.subtotal, 0).toFixed(2),
-    );
+    return Number(this.itens.reduce((total, item) => total + item.subtotal, 0).toFixed(2));
   }
 
   get tempoExecucaoMinutos(): number | null {
@@ -130,9 +128,7 @@ export class OrdemServico {
 
   private transitar(novoStatus: StatusOS): void {
     if (!podeTransitar(this.status, novoStatus)) {
-      throw new Error(
-        `Transição inválida: ${this.status} → ${novoStatus}`,
-      );
+      throw new Error(`Transição inválida: ${this.status} → ${novoStatus}`);
     }
     this.status = novoStatus;
     this.atualizadoEm = new Date();

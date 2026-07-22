@@ -15,9 +15,7 @@ describe('Cliente', () => {
   });
 
   it('rejeita CPF inválido', () => {
-    expect(() => new Cliente({ nome: 'João', documento: '111.111.111-11' })).toThrow(
-      /Documento/,
-    );
+    expect(() => new Cliente({ nome: 'João', documento: '111.111.111-11' })).toThrow(/Documento/);
   });
 
   it('rejeita nome vazio', () => {

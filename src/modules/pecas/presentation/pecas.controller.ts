@@ -59,19 +59,13 @@ export class PecasController {
 
   @Post(':id/entrada')
   @ApiOperation({ summary: 'Registra entrada de estoque' })
-  entrada(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: MovimentacaoEstoqueDto,
-  ) {
+  entrada(@Param('id', ParseUUIDPipe) id: string, @Body() dto: MovimentacaoEstoqueDto) {
     return this.service.entradaEstoque(id, dto.quantidade);
   }
 
   @Post(':id/saida')
   @ApiOperation({ summary: 'Registra saída de estoque (avulsa)' })
-  saida(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: MovimentacaoEstoqueDto,
-  ) {
+  saida(@Param('id', ParseUUIDPipe) id: string, @Body() dto: MovimentacaoEstoqueDto) {
     return this.service.saidaEstoque(id, dto.quantidade);
   }
 
