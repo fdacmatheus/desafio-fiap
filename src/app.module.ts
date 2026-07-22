@@ -8,8 +8,10 @@ import { PecasModule } from './modules/pecas/pecas.module';
 import { ServicosModule } from './modules/servicos/servicos.module';
 import { VeiculosModule } from './modules/veiculos/veiculos.module';
 import { SeedModule } from './shared/database/seed.module';
+import { HealthController } from './shared/health/health.controller';
 
 @Module({
+  controllers: [HealthController],
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
