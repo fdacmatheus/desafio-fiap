@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: oficina-api-config
+  namespace: oficina
+data:
+  NODE_ENV: 'development'
+  PORT: '3000'
+  DB_HOST: 'postgres'
+  DB_PORT: '5432'
+  DB_NAME: 'oficina'
+  AUTO_SEED: 'true'
+  SMTP_HOST: 'mailhog'
+  SMTP_PORT: '1025'
+  SMTP_FROM: 'oficina@oficina.com'
+  JWT_EXPIRES_IN: '15m'
+  JWT_REFRESH_EXPIRES_IN: '7d'
