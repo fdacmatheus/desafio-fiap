@@ -46,6 +46,7 @@ export class OrdemServicoTypeOrmRepository implements OrdemServicoRepository {
   private toOrm(os: OrdemServico): OrdemServicoOrmEntity {
     const orm = new OrdemServicoOrmEntity();
     if (os.id) orm.id = os.id;
+    if (os.numero) orm.numero = os.numero;
     orm.clienteId = os.clienteId;
     orm.veiculoId = os.veiculoId;
     orm.status = os.status;
