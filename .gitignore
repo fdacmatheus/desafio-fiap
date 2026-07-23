@@ -29,3 +29,9 @@ Thumbs.db
 
 # typescript
 *.tsbuildinfo
+
+# Terraform
+infra/.terraform/
+*.tfstate
+*.tfstate.backup
+infra/oficina-config
