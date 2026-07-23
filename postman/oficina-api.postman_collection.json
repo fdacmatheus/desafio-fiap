@@ -1,0 +1,556 @@
+{
+  "info": {
+    "_postman_id": "b7f7f0a2-4c1e-4f7b-9c1d-2f7c53ed2a06",
+    "name": "Oficina API — Tech Challenge SOAT Fase 2",
+    "description": "Collection completa da Oficina API.\n\nComo usar:\n1. Ajuste a variável `baseUrl` se necessário (compose: http://localhost:3000/api · Kubernetes: http://localhost:30080/api).\n2. Rode **1. Auth → Login** — o token é salvo automaticamente e usado em todas as requisições.\n3. Rode a pasta **6. Ordens de Serviço — fluxo completo** na ordem: cada requisição salva os IDs que a próxima usa.\n\nTambém funciona via 'Run collection' (Collection Runner) de cima a baixo.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000/api" },
+    { "key": "accessToken", "value": "" },
+    { "key": "refreshToken", "value": "" },
+    { "key": "clienteId", "value": "" },
+    { "key": "veiculoId", "value": "" },
+    { "key": "servicoId", "value": "" },
+    { "key": "pecaId", "value": "" },
+    { "key": "osId", "value": "" },
+    { "key": "osNumero", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "0. Health",
+      "item": [
+        {
+          "name": "Health check",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/health", "host": ["{{baseUrl}}"], "path": ["health"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status ok', () => pm.expect(pm.response.json().status).to.eql('ok'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "1. Auth",
+      "item": [
+        {
+          "name": "Login (salva token)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('accessToken', json.accessToken);",
+                  "pm.collectionVariables.set('refreshToken', json.refreshToken);",
+                  "pm.test('login ok', () => pm.expect(json.accessToken).to.be.a('string'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Register",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"usuario{{$randomInt}}\",\n  \"password\": \"senhaForte123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] }
+          }
+        },
+        {
+          "name": "Refresh tokens",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{refreshToken}}", "type": "string" }]
+            },
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/auth/refresh", "host": ["{{baseUrl}}"], "path": ["auth", "refresh"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('accessToken', json.accessToken);",
+                  "pm.collectionVariables.set('refreshToken', json.refreshToken);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Clientes",
+      "item": [
+        {
+          "name": "Criar cliente (salva clienteId)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Cliente Postman\",\n  \"documento\": \"{{cpfGerado}}\",\n  \"email\": \"cliente.postman@email.com\",\n  \"telefone\": \"+5511988887777\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/clientes", "host": ["{{baseUrl}}"], "path": ["clientes"] }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// gera um CPF válido aleatório",
+                  "const n = () => Math.floor(Math.random() * 10);",
+                  "const d = [n(),n(),n(),n(),n(),n(),n(),n(),n()];",
+                  "const dv = (arr, f) => { let s = arr.reduce((acc, v, i) => acc + v * (f - i), 0) % 11; return s < 2 ? 0 : 11 - s; };",
+                  "d.push(dv(d, 10)); d.push(dv(d, 11));",
+                  "pm.variables.set('cpfGerado', d.join(''));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": ["pm.collectionVariables.set('clienteId', pm.response.json().id);"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar clientes",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/clientes", "host": ["{{baseUrl}}"], "path": ["clientes"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// fallback: se ainda não criou cliente, usa o primeiro do seed",
+                  "if (!pm.collectionVariables.get('clienteId')) {",
+                  "  pm.collectionVariables.set('clienteId', pm.response.json()[0]?.id ?? '');",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Buscar cliente por id",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/clientes/{{clienteId}}", "host": ["{{baseUrl}}"], "path": ["clientes", "{{clienteId}}"] }
+          }
+        },
+        {
+          "name": "Atualizar cliente",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"telefone\": \"+5511900001111\"\n}" },
+            "url": { "raw": "{{baseUrl}}/clientes/{{clienteId}}", "host": ["{{baseUrl}}"], "path": ["clientes", "{{clienteId}}"] }
+          }
+        },
+        {
+          "name": "Excluir cliente",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/clientes/{{clienteId}}", "host": ["{{baseUrl}}"], "path": ["clientes", "{{clienteId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Veículos",
+      "item": [
+        {
+          "name": "Criar veículo (salva veiculoId)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clienteId\": \"{{clienteId}}\",\n  \"placa\": \"{{placaGerada}}\",\n  \"marca\": \"Volkswagen\",\n  \"modelo\": \"Gol\",\n  \"ano\": 2022\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/veiculos", "host": ["{{baseUrl}}"], "path": ["veiculos"] }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// gera placa Mercosul aleatória (AAA0A00)",
+                  "const L = () => String.fromCharCode(65 + Math.floor(Math.random() * 26));",
+                  "const N = () => Math.floor(Math.random() * 10);",
+                  "pm.variables.set('placaGerada', `${L()}${L()}${L()}${N()}${L()}${N()}${N()}`);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": ["pm.collectionVariables.set('veiculoId', pm.response.json().id);"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar veículos",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/veiculos", "host": ["{{baseUrl}}"], "path": ["veiculos"] }
+          }
+        },
+        {
+          "name": "Buscar veículo por id",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/veiculos/{{veiculoId}}", "host": ["{{baseUrl}}"], "path": ["veiculos", "{{veiculoId}}"] }
+          }
+        },
+        {
+          "name": "Atualizar veículo",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"ano\": 2023\n}" },
+            "url": { "raw": "{{baseUrl}}/veiculos/{{veiculoId}}", "host": ["{{baseUrl}}"], "path": ["veiculos", "{{veiculoId}}"] }
+          }
+        },
+        {
+          "name": "Excluir veículo",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/veiculos/{{veiculoId}}", "host": ["{{baseUrl}}"], "path": ["veiculos", "{{veiculoId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Serviços",
+      "item": [
+        {
+          "name": "Criar serviço (salva servicoId)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Alinhamento e balanceamento {{$randomInt}}\",\n  \"descricao\": \"Alinhamento das 4 rodas\",\n  \"preco\": 180,\n  \"duracaoEstimadaMinutos\": 90\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/servicos", "host": ["{{baseUrl}}"], "path": ["servicos"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": ["pm.collectionVariables.set('servicoId', pm.response.json().id);"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar serviços",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/servicos", "host": ["{{baseUrl}}"], "path": ["servicos"] }
+          }
+        },
+        {
+          "name": "Buscar serviço por id",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/servicos/{{servicoId}}", "host": ["{{baseUrl}}"], "path": ["servicos", "{{servicoId}}"] }
+          }
+        },
+        {
+          "name": "Atualizar serviço",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"preco\": 200\n}" },
+            "url": { "raw": "{{baseUrl}}/servicos/{{servicoId}}", "host": ["{{baseUrl}}"], "path": ["servicos", "{{servicoId}}"] }
+          }
+        },
+        {
+          "name": "Excluir serviço",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/servicos/{{servicoId}}", "host": ["{{baseUrl}}"], "path": ["servicos", "{{servicoId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Peças",
+      "item": [
+        {
+          "name": "Criar peça (salva pecaId)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku\": \"FILTRO-{{$randomInt}}\",\n  \"nome\": \"Filtro de ar esportivo\",\n  \"descricao\": \"Filtro de ar de alto fluxo\",\n  \"precoUnitario\": 89.9,\n  \"estoque\": 50,\n  \"estoqueMinimo\": 5\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/pecas", "host": ["{{baseUrl}}"], "path": ["pecas"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": ["pm.collectionVariables.set('pecaId', pm.response.json().id);"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar peças",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/pecas", "host": ["{{baseUrl}}"], "path": ["pecas"] }
+          }
+        },
+        {
+          "name": "Peças com estoque baixo",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/pecas/estoque-baixo", "host": ["{{baseUrl}}"], "path": ["pecas", "estoque-baixo"] }
+          }
+        },
+        {
+          "name": "Entrada de estoque",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"quantidade\": 10\n}" },
+            "url": { "raw": "{{baseUrl}}/pecas/{{pecaId}}/entrada", "host": ["{{baseUrl}}"], "path": ["pecas", "{{pecaId}}", "entrada"] }
+          }
+        },
+        {
+          "name": "Saída de estoque",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"quantidade\": 2\n}" },
+            "url": { "raw": "{{baseUrl}}/pecas/{{pecaId}}/saida", "host": ["{{baseUrl}}"], "path": ["pecas", "{{pecaId}}", "saida"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Ordens de Serviço — fluxo completo",
+      "description": "Rode na ordem. Pré-requisito: Login + Criar cliente/veículo/serviço/peça (ou rode a collection inteira de uma vez).",
+      "item": [
+        {
+          "name": "1) Abrir OS (salva osId/osNumero)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clienteId\": \"{{clienteId}}\",\n  \"veiculoId\": \"{{veiculoId}}\",\n  \"servicos\": [{ \"servicoId\": \"{{servicoId}}\" }],\n  \"pecas\": [{ \"pecaId\": \"{{pecaId}}\", \"quantidade\": 2 }]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/ordens-servico", "host": ["{{baseUrl}}"], "path": ["ordens-servico"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('osId', json.id);",
+                  "pm.collectionVariables.set('osNumero', json.numero);",
+                  "pm.test('OS criada com identificação única', () => {",
+                  "  pm.expect(json.id).to.be.a('string');",
+                  "  pm.expect(json.numero).to.be.a('number');",
+                  "  pm.expect(json.status).to.eql('RECEBIDA');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2) Listar OSs (priorizada, sem finalizadas/entregues)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/ordens-servico", "host": ["{{baseUrl}}"], "path": ["ordens-servico"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const list = pm.response.json();",
+                  "pm.test('sem FINALIZADA/ENTREGUE/CANCELADA na listagem', () => {",
+                  "  list.forEach(os => pm.expect(['FINALIZADA','ENTREGUE','CANCELADA']).to.not.include(os.status));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3) Consultar status da OS (autenticado)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/ordens-servico/{{osId}}/status", "host": ["{{baseUrl}}"], "path": ["ordens-servico", "{{osId}}", "status"] }
+          }
+        },
+        {
+          "name": "4) Iniciar diagnóstico",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"diagnostico\": \"Troca de óleo, filtro e alinhamento\"\n}" },
+            "url": { "raw": "{{baseUrl}}/ordens-servico/{{osId}}/diagnostico", "host": ["{{baseUrl}}"], "path": ["ordens-servico", "{{osId}}", "diagnostico"] }
+          }
+        },
+        {
+          "name": "5) Solicitar aprovação do orçamento",
+          "request": {
+            "method": "PATCH",
+            "url": { "raw": "{{baseUrl}}/ordens-servico/{{osId}}/solicitar-aprovacao", "host": ["{{baseUrl}}"], "path": ["ordens-servico", "{{osId}}", "solicitar-aprovacao"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('aguardando aprovação', () => pm.expect(pm.response.json().status).to.eql('AGUARDANDO_APROVACAO'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "6) [PÚBLICO] Consultar status pelo número",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/publico/ordens-servico/{{osNumero}}/status", "host": ["{{baseUrl}}"], "path": ["publico", "ordens-servico", "{{osNumero}}", "status"] }
+          }
+        },
+        {
+          "name": "7) [PÚBLICO] Webhook: APROVAR orçamento",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"aprovado\": true\n}" },
+            "url": { "raw": "{{baseUrl}}/publico/ordens-servico/{{osNumero}}/orcamento", "host": ["{{baseUrl}}"], "path": ["publico", "ordens-servico", "{{osNumero}}", "orcamento"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('OS em execução após aprovação', () => pm.expect(pm.response.json().status).to.eql('EM_EXECUCAO'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "8) Finalizar OS",
+          "request": {
+            "method": "PATCH",
+            "url": { "raw": "{{baseUrl}}/ordens-servico/{{osId}}/finalizar", "host": ["{{baseUrl}}"], "path": ["ordens-servico", "{{osId}}", "finalizar"] }
+          }
+        },
+        {
+          "name": "9) Entregar OS",
+          "request": {
+            "method": "PATCH",
+            "url": { "raw": "{{baseUrl}}/ordens-servico/{{osId}}/entregar", "host": ["{{baseUrl}}"], "path": ["ordens-servico", "{{osId}}", "entregar"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('OS entregue', () => pm.expect(pm.response.json().status).to.eql('ENTREGUE'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "10) Buscar OS por id (detalhe completo)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/ordens-servico/{{osId}}", "host": ["{{baseUrl}}"], "path": ["ordens-servico", "{{osId}}"] }
+          }
+        },
+        {
+          "name": "Tempo médio de execução",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/ordens-servico/tempo-medio-execucao", "host": ["{{baseUrl}}"], "path": ["ordens-servico", "tempo-medio-execucao"] }
+          }
+        },
+        {
+          "name": "[PÚBLICO] Webhook: RECUSAR orçamento (cancela)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"aprovado\": false,\n  \"motivo\": \"Orçamento acima do esperado\"\n}" },
+            "url": { "raw": "{{baseUrl}}/publico/ordens-servico/{{osNumero}}/orcamento", "host": ["{{baseUrl}}"], "path": ["publico", "ordens-servico", "{{osNumero}}", "orcamento"] }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// use com uma OS em AGUARDANDO_APROVACAO (ex.: a OS #1 do seed)"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[PÚBLICO] Acompanhamento pelo número",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/publico/ordens-servico/{{osNumero}}", "host": ["{{baseUrl}}"], "path": ["publico", "ordens-servico", "{{osNumero}}"] }
+          }
+        }
+      ]
+    }
+  ]
+}

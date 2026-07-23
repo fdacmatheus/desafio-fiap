@@ -140,7 +140,9 @@ Cria: **admin** (`admin` / `admin123`), 2 clientes (PF + PJ), 3 veículos, 4 ser
 
 ## Collection das APIs
 
-A documentação completa e executável está no **Swagger**: `http://localhost:3000/docs` (local) ou `http://localhost:30080/docs` (Kubernetes). O JSON OpenAPI para importar no Postman fica em `/docs-json`.
+Collection do **Postman** pronta em [`postman/oficina-api.postman_collection.json`](postman/oficina-api.postman_collection.json) — importe no Postman e rode **Auth → Login**; o token e os IDs (cliente, veículo, OS etc.) são capturados automaticamente pelos scripts, permitindo executar o fluxo completo da OS em ordem (inclusive via Collection Runner). Ajuste a variável `baseUrl` conforme o ambiente (`http://localhost:3000/api` no compose, `http://localhost:30080/api` no Kubernetes).
+
+A documentação executável também está no **Swagger**: `http://localhost:3000/docs` (local) ou `http://localhost:30080/docs` (Kubernetes). O JSON OpenAPI fica em `/docs-json`.
 
 ## Variáveis de ambiente
 
